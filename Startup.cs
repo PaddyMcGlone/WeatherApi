@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Polly;
 
 namespace WeatherApi
 {
@@ -28,10 +29,14 @@ namespace WeatherApi
         {
 
             services.AddControllers();
+            
+            // Adding Typed HttpClient connection via service.
             services.AddHttpClient<IWeatherService, WeatherService>(c =>
             {
-                c.BaseAddress = new Uri("http://api.weatherapi.com/v1/current.json"); // Adding a named client.
-            }); 
+                c.BaseAddress = new Uri("http://api.weatherapi.com/v1/current.json"); // Adding our API details.
+            }).AddTransientHttpErrorPolicy(p => 
+                p.WaitAndRetryAsync(3, _ =>TimeSpan.FromSeconds(2))) // Adding Transient Retry policy
+                .AddTransientHttpErrorPolicy(p => p.CircuitBreakerAsync(5, TimeSpan.FromSeconds(5))); // Adding Circuit breaker policy - Waits 5 seconds if theres 5 errors 
             
             services.AddSwaggerGen(c =>
             {

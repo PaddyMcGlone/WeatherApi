@@ -8,7 +8,7 @@ namespace WeatherApi
     {
         Task<string> Get(string cityName);
     }
-
+    
     public class WeatherService : IWeatherService
     {
         private HttpClient _httpClient;
@@ -25,6 +25,9 @@ namespace WeatherApi
             string apiUrl = $"?key={apiKey}&q={city}";
 
             var response = await _httpClient.GetAsync(apiUrl);
+
+            // Throws an exception if invalid response returned.
+            response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();
         }
